@@ -2,15 +2,11 @@
 
 🔍 A command-line tool to compare two Elasticsearch indices and output differences to a CSV file.
 
-
 ## 🚀 Features
 
 - Scroll through two indices and deeply compare their documents.
 - Exclude specific fields from comparison (e.g., timestamps, IDs).
 - Automatic timestamped output fixtures.
-- Robust argument validation and clear error messages.
-
----
 
 ## ⬇️ Installation via Homebrew
 
@@ -39,29 +35,25 @@ es-diff \
 ```bash
 es-diff \
   --host http://localhost:9200 \
-  --index-a routing_20250708 \
-  --index-b routing_20250709 \
-  --doc-type attribute \
-  --exclude-path "root['indexId']" \
-  --exclude-path "root['ts']"
+  --index-a users_20250708 \
+  --index-b users_20250709 \
+  --doc-type education \
+  --exclude-path "root['customDocId']" \
+  --exclude-path "root['timestamp']"
 ```
 
 By default, the CSV file will be named:
 
-es-diff-out-<index_a>+by+<index_b>+YYYY-MM-DD_HH-MM-SS.csv
+YYYY-MM-DD_HH-MM-SS-<index_a>-by-<index_b>.csv
 
 ## ✅ Requirements
 
 - Python 3.7+
-
 - Access to an Elasticsearch cluster
 
 - Dependencies:
-
     - elasticsearch
-
     - deepdiff
-
     - tqdm
 
 Install via pip:
@@ -93,8 +85,8 @@ Clone the repo and install dependencies:
 ```bash
 git clone https://github.com/huseyingokdag/es-diff.git
 cd es-diff
-pip install -r requirements.txt
-python es_compare.py --help
+pip3 install -r requirements.txt
+python3 es-diff.py --help
 ```
 
 ## 🔧 Contributing
