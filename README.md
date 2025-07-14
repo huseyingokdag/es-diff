@@ -66,17 +66,14 @@ pip install -r requirements.txt
 
 This project is licensed under the MIT License.
 
-## 📦 Third-Party Dependencies
+## 📦 Third‑Party Dependencies
 
 This tool uses the following Python packages:
+- elasticsearch — Apache‑2.0
+- deepdiff — MIT
+- tqdm — MIT + MPL‑2.0
 
-elasticsearch – Apache License 2.0
-
-deepdiff – MIT License
-
-tqdm – Mozilla Public License 2.0
-
-See THIRD_PARTY_LICENSES.md for complete license texts.
+See [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md) for full license texts.
 
 ## 🛠️ Development
 
@@ -85,8 +82,8 @@ Clone the repo and install dependencies:
 ```bash
 git clone https://github.com/huseyingokdag/es-diff.git
 cd es-diff
-pip3 install -r requirements.txt
-python3 es-diff.py --help
+pip install -r requirements.txt
+python es-diff.py --help
 ```
 
 ## 🔧 Contributing
