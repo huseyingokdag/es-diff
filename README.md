@@ -6,7 +6,6 @@
 
 - Scroll through two indices and deeply compare their documents.
 - Exclude specific fields from comparison (e.g., timestamps, IDs).
-- Automatic timestamped output fixtures.
 
 ## ⬇️ Installation via Homebrew
 
@@ -26,8 +25,8 @@ es-diff \
   [--output-csv OUTPUT_FILENAME] \
   [--scroll-size N] \
   [--scroll-time 2m] \
-  [--exclude-path "root['fieldA']"] \
-  [--exclude-path "root['nested']['ts']"]
+  [--exclude-path "root['someField']"] \
+  [--exclude-path "root['nested']['someTimestamp']"]
 ```
 
 ### Example
@@ -38,8 +37,8 @@ es-diff \
   --index-a users_20250708 \
   --index-b users_20250709 \
   --doc-type education \
-  --exclude-path "root['customDocId']" \
-  --exclude-path "root['timestamp']"
+  --exclude-path "root['someDocId']" \
+  --exclude-path "root['someTimestamp']"
 ```
 
 By default, the CSV file will be named:
