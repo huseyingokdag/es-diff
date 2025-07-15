@@ -10,6 +10,7 @@ from tqdm import tqdm
 from datetime import datetime
 import re
 from dataclasses import dataclass
+from es_diff.version import __version__
 
 @dataclass
 class Config:
@@ -27,6 +28,8 @@ def parse_args():
         description="Compare two Elasticsearch indices and output differences to a CSV.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
+
+    parser.add_argument('--version', action='version', version=f'es-diff {__version__}')
 
     # Group required arguments
     required = parser.add_argument_group("🔒 Required arguments")
