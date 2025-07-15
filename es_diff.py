@@ -9,6 +9,18 @@ from deepdiff import DeepDiff
 from tqdm import tqdm
 from datetime import datetime
 import re
+from dataclasses import dataclass
+
+@dataclass
+class Config:
+    host: str
+    index_a: str
+    index_b: str
+    doc_type: str
+    output_csv: str
+    scroll_size: int
+    scroll_time: str
+    exclude_paths: set[str] | None
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -76,34 +88,34 @@ def convert_types_to_strings(obj):
     else:
         return str(obj)  # fallback for unknown types like SetOrdered
 
-def get_total_docs(es, index):
-    resp = es.count(index=index, doc_type=DOC_TYPE)
+def get_total_docs(es, index, cfg):
+    resp = es.count(index=index, doc_type=cfg.doc_type)
     return resp['count']
 
-def compare_indices(es, index_a, index_b, output_csv):
-    with open(output_csv, mode="w", newline='', encoding="utf-8") as csvfile:
+def compare_indices(es, cfg):
+    with open(cfg.output_csv, mode="w", newline='', encoding="utf-8") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=["doc_id", "difference_type", "diff_details"])
         writer.writeheader()
 
         tracemalloc.start()
 
-        total_docs_a = get_total_docs(es, index_a)
-        total_docs_b = get_total_docs(es, index_b)
+        total_docs_a = get_total_docs(es, cfg.index_a, cfg)
+        total_docs_b = get_total_docs(es, cfg.index_b, cfg)
 
         processed_ids = set()
         total_docs_processed = 0
 
-        resp = es.search(index=index_a, doc_type=DOC_TYPE, size=SCROLL_SIZE, scroll=SCROLL_TIME, body={"query": {"match_all": {}}})
+        resp = es.search(index=cfg.index_a, doc_type=cfg.doc_type, size=cfg.scroll_size, scroll=cfg.scroll_time, body={"query": {"match_all": {}}})
         scroll_id = resp['_scroll_id']
         hits = resp['hits']['hits']
 
-        pbar_a = tqdm(total=total_docs_a, desc=f"Scanning {index_a}")
+        pbar_a = tqdm(total=total_docs_a, desc=f"Scanning {cfg.index_a}")
 
         while hits:
             batch_start_time = time.time()
             ids = [hit['_id'] for hit in hits]
 
-            docs_b = es.mget(body={"ids": ids}, index=index_b, doc_type=DOC_TYPE)['docs']
+            docs_b = es.mget(body={"ids": ids}, index=cfg.index_b, doc_type=cfg.doc_type)['docs']
             b_docs_by_id = {doc['_id']: doc for doc in docs_b if doc['found']}
 
             for doc_a in hits:
@@ -114,7 +126,7 @@ def compare_indices(es, index_a, index_b, output_csv):
                 doc_b = b_docs_by_id.get(doc_id)
                 if doc_b:
                     source_b = doc_b['_source']
-                    diff = DeepDiff(source_a, source_b, ignore_order=True, exclude_paths=EXCLUDE_PATHS)
+                    diff = DeepDiff(source_a, source_b, ignore_order=True, exclude_paths=cfg.exclude_paths)
                     if diff:
                         safe_diff = convert_types_to_strings(diff)
                         writer.writerow({
@@ -126,7 +138,7 @@ def compare_indices(es, index_a, index_b, output_csv):
                     writer.writerow({
                         "doc_id": doc_id,
                         "difference_type": "missing_in_one_index",
-                        "diff_details": f"Present in: {index_a}"
+                        "diff_details": f"Present in: {cfg.index_a}"
                     })
 
             batch_end_time = time.time()
@@ -140,17 +152,17 @@ def compare_indices(es, index_a, index_b, output_csv):
                 "Mem peak (MB)": f"{peak / 1024 / 1024:.2f}"
             })
 
-            resp = es.scroll(scroll_id=scroll_id, scroll=SCROLL_TIME)
+            resp = es.scroll(scroll_id=scroll_id, scroll=cfg.scroll_time)
             scroll_id = resp['_scroll_id']
             hits = resp['hits']['hits']
 
         pbar_a.close()
 
-        resp = es.search(index=index_b, doc_type=DOC_TYPE, size=SCROLL_SIZE, scroll=SCROLL_TIME, body={"query": {"match_all": {}}})
+        resp = es.search(index=cfg.index_b, doc_type=cfg.doc_type, size=cfg.scroll_size, scroll=cfg.scroll_time, body={"query": {"match_all": {}}})
         scroll_id = resp['_scroll_id']
         hits = resp['hits']['hits']
 
-        pbar_b = tqdm(total=total_docs_b, desc=f"Scanning {index_b}")
+        pbar_b = tqdm(total=total_docs_b, desc=f"Scanning {cfg.index_b}")
 
         while hits:
             batch_start_time = time.time()
@@ -160,7 +172,7 @@ def compare_indices(es, index_a, index_b, output_csv):
                     writer.writerow({
                         "doc_id": doc_id,
                         "difference_type": "missing_in_one_index",
-                        "diff_details": f"Present in: {index_b}"
+                        "diff_details": f"Present in: {cfg.index_b}"
                     })
 
             batch_end_time = time.time()
@@ -173,48 +185,53 @@ def compare_indices(es, index_a, index_b, output_csv):
                 "Mem peak (MB)": f"{peak / 1024 / 1024:.2f}"
             })
 
-            resp = es.scroll(scroll_id=scroll_id, scroll=SCROLL_TIME)
+            resp = es.scroll(scroll_id=scroll_id, scroll=cfg.scroll_time)
             scroll_id = resp['_scroll_id']
             hits = resp['hits']['hits']
 
         pbar_b.close()
         tracemalloc.stop()
 
-    print(f"Comparison complete. Results saved in {output_csv}")
+    print(f"Comparison complete. Results saved in {cfg.output_csv}")
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
+
+    cfg = Config(
+        host=args.host,
+        index_a=args.index_a,
+        index_b=args.index_b,
+        doc_type=args.doc_type,
+        output_csv=args.output_csv,
+        scroll_size=args.scroll_size,
+        scroll_time=args.scroll_time,
+        exclude_paths=set(args.exclude_path) if args.exclude_path else None
+    )
 
     # Try to connect to Elasticsearch
     try:
-        es = Elasticsearch(args.host)
+        es = Elasticsearch(cfg.host)
         if not es.ping():
-            print(f"❌ Error: Could not connect to Elasticsearch at {args.host}")
+            print(f"❌ Error: Could not connect to Elasticsearch at {cfg.host}")
             sys.exit(1)
     except es_exceptions.ElasticsearchException as e:
         print(f"❌ Connection error: {e}")
         sys.exit(1)
 
     # Check that indices exist
-    for index in [args.index_a, args.index_b]:
+    for index in [cfg.index_a, cfg.index_b]:
         if not es.indices.exists(index=index):
             print(f"❌ Error: Index '{index}' does not exist.")
             sys.exit(1)
 
-    print(f"🔍 Comparing '{args.index_a}' with '{args.index_b}' on {args.host}")
-    print(f"📁 Output will be saved to: {args.output_csv}")
+    print(f"🔍 Comparing '{cfg.index_a}' with '{cfg.index_b}' on {cfg.host}")
+    print(f"📁 Output will be saved to: {cfg.output_csv}")
 
-    ES_HOST = args.host
-    INDEX_A = args.index_a
-    INDEX_B = args.index_b
-    DOC_TYPE = args.doc_type
-    OUTPUT_CSV = args.output_csv
-    SCROLL_SIZE = args.scroll_size
-    SCROLL_TIME = args.scroll_time
-    EXCLUDE_PATHS = set(args.exclude_path) if args.exclude_path else None
-
-    es_client = Elasticsearch([ES_HOST])
+    es_client = Elasticsearch([cfg.host])
     start_time = time.time()
-    compare_indices(es_client, INDEX_A, INDEX_B, OUTPUT_CSV)
+    compare_indices(es_client, cfg)
     end_time = time.time()
     print(f"Total execution time: {end_time - start_time:.2f} seconds")
+
+if __name__ == "__main__":
+    main()
