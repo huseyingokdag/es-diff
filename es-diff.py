@@ -4,7 +4,7 @@ import json
 import csv
 import argparse
 import sys
-from elasticsearch import Elasticsearch, exceptions as es_exceptions
+from elasticsearch5 import Elasticsearch, exceptions as es_exceptions
 from deepdiff import DeepDiff
 from tqdm import tqdm
 from datetime import datetime

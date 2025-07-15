@@ -48,7 +48,7 @@ YYYY-MM-DD_HH-MM-SS-<index_a>-by-<index_b>.csv
 ## ✅ Requirements
 
 - Python 3.7+
-- Access to an Elasticsearch cluster
+- Access to an Elasticsearch cluster (Tested on Elasticsearch v5.3.2 and v7.10.1)
 
 - Dependencies:
     - elasticsearch
