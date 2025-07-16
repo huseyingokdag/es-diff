@@ -80,9 +80,9 @@ Clone the repo and install dependencies:
 
 ```bash
 git clone https://github.com/huseyingokdag/es-diff.git
-cd es-diff
+cd es-diff/es_diff
 pip install -r requirements.txt
-python es-diff.py --help
+python cli.py --help
 ```
 
 ## 🔧 Contributing
