@@ -68,9 +68,9 @@ This project is licensed under the MIT License.
 ## 📦 Third‑Party Dependencies
 
 This tool uses the following Python packages:
-- elasticsearch — Apache‑2.0
-- deepdiff — MIT
-- tqdm — MIT + MPL‑2.0
+- elasticsearch (v5.5.6) — Apache‑2.0
+- deepdiff — MIT (v8.5.0)
+- tqdm — MIT + MPL‑2.0 (v4.67.1)
 
 See [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md) for full license texts.
 
